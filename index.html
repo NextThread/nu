@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Technical Analysis</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Cryptocurrency Technical Analysis</h1>
+        
+        <!-- Image Upload Section -->
+        <div class="upload-section">
+            <label for="chart-image">Upload Chart Image (Display Only):</label>
+            <input type="file" id="chart-image" accept="image/*">
+            <img id="preview" src="" alt="Uploaded Chart" style="display: none; max-width: 400px;">
+        </div>
+
+        <!-- Crypto Name Input -->
+        <div class="input-section">
+            <label for="crypto-name">Enter Cryptocurrency Name (e.g., bitcoin):</label>
+            <input type="text" id="crypto-name" placeholder="e.g., bitcoin">
+            <button onclick="analyzeCrypto()">Analyze</button>
+        </div>
+
+        <!-- Analysis Output -->
+        <div class="analysis-section">
+            <h2>Technical Analysis</h2>
+            <div id="analysis-result"></div>
+        </div>
+    </div>
+
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
