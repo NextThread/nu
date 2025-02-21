@@ -1,14 +1,53 @@
-// Image Preview Functionality (unchanged)
-document.getElementById('chart-image').addEventListener('change', function(event) {
+// Image Handling
+const imageInput = document.getElementById('chart-image');
+const preview = document.getElementById('preview');
+
+// Handle image upload or capture
+imageInput.addEventListener('change', function(event) {
     const file = event.target.files[0];
-    const preview = document.getElementById('preview');
     if (file) {
         preview.src = URL.createObjectURL(file);
         preview.style.display = 'block';
     }
 });
 
-// Analyze Cryptocurrency
+// Fallback: Use camera via getUserMedia if file input isn’t supported or preferred
+function captureImageFallback() {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+
+                // Temporary canvas to capture image
+                const canvas = document.createElement('canvas');
+                canvas.width = 640;
+                canvas.height = 480;
+                const context = canvas.getContext('2d');
+
+                // Capture image after 2 seconds (time to position camera)
+                setTimeout(() => {
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    preview.src = canvas.toDataURL('image/png');
+                    preview.style.display = 'block';
+                    stream.getTracks().forEach(track => track.stop()); // Stop camera
+                }, 2000);
+            })
+            .catch(err => {
+                console.error('Camera access denied or unavailable:', err);
+                alert('Unable to access camera. Please use file upload instead.');
+            });
+    } else {
+        alert('Camera not supported in this browser.');
+    }
+}
+
+// Optional: Trigger fallback if needed (e.g., via a button or if no file is selected)
+// Uncomment the line below and add a button in HTML if you want manual fallback
+// document.getElementById('capture-btn').addEventListener('click', captureImageFallback);
+
+// Existing Analyze Crypto Function (unchanged from previous detailed version)
 async function analyzeCrypto() {
     const cryptoName = document.getElementById('crypto-name').value.trim().toLowerCase();
     const resultDiv = document.getElementById('analysis-result');
@@ -21,7 +60,6 @@ async function analyzeCrypto() {
     resultDiv.innerHTML = '<p>Loading analysis...</p>';
 
     try {
-        // Fetch real-time price data
         const priceResponse = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoName}&vs_currencies=usd`);
         const currentPrice = priceResponse.data[cryptoName]?.usd;
 
@@ -30,34 +68,24 @@ async function analyzeCrypto() {
             return;
         }
 
-        // Fetch 30-day historical data for analysis
         const historicalResponse = await axios.get(`https://api.coingecko.com/api/v3/coins/${cryptoName}/market_chart?vs_currency=usd&days=30`);
-        const prices = historicalResponse.data.prices.map(price => price[1]); // Array of prices
+        const prices = historicalResponse.data.prices.map(price => price[1]);
 
-        // Calculate Moving Averages
         const sma7 = calculateSMA(prices.slice(-7));
         const sma14 = calculateSMA(prices.slice(-14));
         const sma30 = calculateSMA(prices.slice(-30));
-
-        // Trend Analysis
         const trend = currentPrice > sma7 ? 'Bullish' : 'Bearish';
-
-        // Support and Resistance (simplified: lowest and highest prices in last 30 days)
         const support = Math.min(...prices);
         const resistance = Math.max(...prices);
-
-        // Volatility (standard deviation of last 14 days)
         const volatility = calculateVolatility(prices.slice(-14));
 
-        // Entry, Stop Loss, Targets, Exit
         const entryPoint = currentPrice;
-        const stopLoss = entryPoint * 0.95; // 5% below entry
-        const target1 = entryPoint * 1.05;  // 5% above entry
-        const target2 = entryPoint * 1.10;  // 10% above entry
-        const target3 = entryPoint * 1.15;  // 15% above entry
-        const exit = trend === 'Bullish' ? resistance * 0.98 : support * 1.02; // Near resistance/support
+        const stopLoss = entryPoint * 0.95;
+        const target1 = entryPoint * 1.05;
+        const target2 = entryPoint * 1.10;
+        const target3 = entryPoint * 1.15;
+        const exit = trend === 'Bullish' ? resistance * 0.98 : support * 1.02;
 
-        // Display Detailed Analysis
         resultDiv.innerHTML = `
             <h3>${cryptoName.toUpperCase()} Technical Analysis</h3>
             <p><strong>Current Price:</strong> $${currentPrice.toFixed(2)}</p>
@@ -86,15 +114,14 @@ async function analyzeCrypto() {
     }
 }
 
-// Simple Moving Average Calculation
+// Utility Functions (unchanged)
 function calculateSMA(prices) {
     const sum = prices.reduce((a, b) => a + b, 0);
     return sum / prices.length;
 }
 
-// Volatility Calculation (Standard Deviation)
 function calculateVolatility(prices) {
     const mean = calculateSMA(prices);
     const variance = prices.reduce((sum, price) => sum + Math.pow(price - mean, 2), 0) / prices.length;
-    return Math.sqrt(variance); // Standard deviation
+    return Math.sqrt(variance);
 }
